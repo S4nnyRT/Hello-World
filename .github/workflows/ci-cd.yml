@@ -31,12 +31,23 @@ jobs:
       run: |
         curl -fL https://install-cli.jfrog.io | sh
         jf config add jfrog-server --url=https://accenture2026.jfrog.io --user=${{ secrets.JFROG_USERNAME }} --password=${{ secrets.JFROG_PASSWORD }}
-
-    - name: Publish build info
-      env:
-        BUILD_NAME: hello_world-ci
-        BUILD_NUMBER: ${{ env.TAG }}
+      
+    - name: setting env vars so following scans can use
+      run: | 
+        echo "BUILD_NAME=dvwa-ci" >> $GITHUB_ENV
+        echo "BUILD_NUMBER=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
+    
+    - name: re-pushing image with it's metadate for following scans
       run: |
-        jf docker push accenture2026.jfrog.io/docker-2026-docker/hello_world:dev-${TAG} docker-dev --build-name=$BUILD_NAME --build-number=$BUILD_NUMBER
-        jf rt build-collect-env $BUILD_NAME $BUILD_NUMBER
-        jf rt build-publish $BUILD_NAME $BUILD_NUMBER
+        jf  rt docker-push accenture2026.jfrog.io/docker-2026-docker/hello_world:dev-${TAG} docker-2026-docker-local \
+        --build-name=$BUILD_NAME \
+        --build-number=$BUILD_NUMBER
+    
+    - name: Collect environment variables
+      run: jf  rt build-collect-env $BUILD_NAME $BUILD_NUMBER
+    
+    - name: Publish the build metadata so XRAY will be able to find it as it requires JFROG build
+      run: jf  rt build-publish $BUILD_NAME $BUILD_NUMBER
+
+    - name: Add Git metadata for evidence
+      run: jf rt build-add-git .
