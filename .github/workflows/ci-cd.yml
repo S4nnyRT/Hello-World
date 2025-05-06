@@ -21,7 +21,7 @@ jobs:
       run: echo "${{ secrets.JFROG_PASSWORD }}" | docker login accenture2026.jfrog.io --username ${{ secrets.JFROG_USERNAME }} --password-stdin
     
     - name: Docker image build
-      run: docker build -t dvwa:latest .
+      run: docker build -t hello_world:latest .
     
     - name: Generate image tag
       run: echo "TAG=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
@@ -31,7 +31,7 @@ jobs:
       run: echo "tag=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
 
     - name: docker tag points to jfrog dev docker repo with dynamic image tag
-      run: docker tag dvwa:latest accenture2026.jfrog.io/docker-2026-docker/hello_world:dev-$TAG
+      run: docker tag hello_world:latest accenture2026.jfrog.io/docker-2026-docker/hello_world:dev-$TAG
 
     - name: Push image to JFrog Dev
       run: docker push accenture2026.jfrog.io/docker-2026-docker/hello_world:dev-$TAG
@@ -46,7 +46,7 @@ jobs:
     
     - name: setting env vars so following scans can use
       run: | 
-        echo "BUILD_NAME=dvwa-ci" >> $GITHUB_ENV
+        echo "BUILD_NAME=hello_world-ci" >> $GITHUB_ENV
         echo "BUILD_NUMBER=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
     
     - name: re-pushing image with it's metadate for following scans
