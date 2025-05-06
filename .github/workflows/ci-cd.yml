@@ -34,7 +34,7 @@ jobs:
       
     - name: setting env vars so following scans can use
       run: | 
-        echo "BUILD_NAME=dvwa-ci" >> $GITHUB_ENV
+        echo "BUILD_NAME=hello_world-ci" >> $GITHUB_ENV
         echo "BUILD_NUMBER=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
     
     - name: re-pushing image with it's metadate for following scans
