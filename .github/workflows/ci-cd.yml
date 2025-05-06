@@ -1,62 +1,48 @@
 name: hello world CI/CD
-
 on:
   push:
-    branches:
-      - master
+    branches: [ master ]
 
 jobs:
   build-and-push-dev:
-    
     runs-on: ubuntu-latest
-    
-    outputs:
-      tag: ${{ steps.set_tag.outputs.tag }}
-    
+
     steps:
-    - name: Checkout repository - loads the code to the runner
-      uses: actions/checkout@v3
-    
-    - name: Login to JFrog Docker Registry
-      run: echo "${{ secrets.JFROG_PASSWORD }}" | docker login accenture2026.jfrog.io --username ${{ secrets.JFROG_USERNAME }} --password-stdin
-    
-    - name: Docker image build
+    - uses: actions/checkout@v4        # grab code + committed Dockerfile
+
+    - name: Login to JFrog Docker registry
+      run: echo "${{ secrets.JFROG_PASSWORD }}" | \
+           docker login accenture2026.jfrog.io \
+           --username ${{ secrets.JFROG_USERNAME }} --password-stdin
+
+    - name: Build image
       run: docker build -t hello_world:latest .
-    
-    - name: Generate image tag
-      run: echo "TAG=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
-    
-    - name: Generate image tag
+
+    - name: Compute short SHA tag
       id: set_tag
-      run: echo "tag=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+      run: echo "TAG=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
 
-    - name: docker tag points to jfrog dev docker repo with dynamic image tag
-      run: docker tag hello_world:latest accenture2026.jfrog.io/docker-2026-docker/hello_world:dev-$TAG
+    - name: Tag for JFrog dev repo
+      run: docker tag hello_world:latest \
+           accenture2026.jfrog.io/docker-2026-docker/hello_world:dev-${TAG}
 
-    - name: Push image to JFrog Dev
-      run: docker push accenture2026.jfrog.io/docker-2026-docker/hello_world:dev-$TAG
-    
-    - name: Install and configure JFrog CLI
+    - name: Push to dev repo
+      run: docker push accenture2026.jfrog.io/docker-2026-docker/hello_world:dev-${TAG}
+
+    - name: Install JFrog CLI & configure
       run: |
         curl -fL https://install-cli.jfrog.io | sh
         jf config add jfrog-server \
-          --url= https://accenture2026.jfrog.io \
+          --url=https://accenture2026.jfrog.io \
           --user=${{ secrets.JFROG_USERNAME }} \
           --password=${{ secrets.JFROG_PASSWORD }}
-    
-    - name: setting env vars so following scans can use
-      run: | 
-        echo "BUILD_NAME=hello_world-ci" >> $GITHUB_ENV
-        echo "BUILD_NUMBER=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
-    
-    - name: re-pushing image with it's metadate for following scans
+
+    - name: Publish build info
+      env:
+        BUILD_NAME: hello_world-ci
+        BUILD_NUMBER: ${{ env.TAG }}
       run: |
-        jf  rt docker-push accenture2026.jfrog.io/docker-2026-docker/hello_world:dev-$TAG docker-dev \
-        --build-name=$BUILD_NAME \
-        --build-number=$BUILD_NUMBER
-    
-    - name: Collect environment variables
-      run: jf  rt build-collect-env $BUILD_NAME $BUILD_NUMBER
-    
-    - name: Publish the build metadata so XRAY will be able to find it as it requires JFROG build
-      run: jf  rt build-publish $BUILD_NAME $BUILD_NUMBER
+        jf rt docker-push accenture2026.jfrog.io/docker-2026-docker/hello_world:dev-${TAG} docker-dev \
+          --build-name=$BUILD_NAME --build-number=$BUILD_NUMBER
+        jf rt build-collect-env $BUILD_NAME $BUILD_NUMBER
+        jf rt build-publish     $BUILD_NAME $BUILD_NUMBER
