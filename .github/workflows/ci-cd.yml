@@ -37,6 +37,6 @@ jobs:
         BUILD_NAME: hello_world-ci
         BUILD_NUMBER: ${{ env.TAG }}
       run: |
-        jf rt docker-push accenture2026.jfrog.io/docker-2026-docker/hello_world:dev-${TAG} docker-dev --build-name=$BUILD_NAME --build-number=$BUILD_NUMBER
+        jf docker push accenture2026.jfrog.io/docker-2026-docker/hello_world:dev-${TAG} docker-dev --build-name=$BUILD_NAME --build-number=$BUILD_NUMBER
         jf rt build-collect-env $BUILD_NAME $BUILD_NUMBER
         jf rt build-publish $BUILD_NAME $BUILD_NUMBER
