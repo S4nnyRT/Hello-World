@@ -12,9 +12,7 @@ jobs:
     - uses: actions/checkout@v4        # grab code + committed Dockerfile
 
     - name: Login to JFrog Docker registry
-      run: echo "${{ secrets.JFROG_PASSWORD }}" | \
-           docker login accenture2026.jfrog.io \
-           --username ${{ secrets.JFROG_USERNAME }} --password-stdin
+      run: echo "${{ secrets.JFROG_PASSWORD }}" | docker login accenture2026.jfrog.io --username ${{ secrets.JFROG_USERNAME }} --password-stdin
 
     - name: Build image
       run: docker build -t hello_world:latest .
@@ -24,8 +22,7 @@ jobs:
       run: echo "TAG=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
 
     - name: Tag for JFrog dev repo
-      run: docker tag hello_world:latest \
-           accenture2026.jfrog.io/docker-2026-docker/hello_world:dev-${TAG}
+      run: docker tag hello_world:latest accenture2026.jfrog.io/docker-2026-docker/hello_world:dev-${TAG}
 
     - name: Push to dev repo
       run: docker push accenture2026.jfrog.io/docker-2026-docker/hello_world:dev-${TAG}
@@ -33,10 +30,7 @@ jobs:
     - name: Install JFrog CLI & configure
       run: |
         curl -fL https://install-cli.jfrog.io | sh
-        jf config add jfrog-server \
-          --url=https://accenture2026.jfrog.io \
-          --user=${{ secrets.JFROG_USERNAME }} \
-          --password=${{ secrets.JFROG_PASSWORD }}
+        jf config add jfrog-server --url=https://accenture2026.jfrog.io --user=${{ secrets.JFROG_USERNAME }} --password=${{ secrets.JFROG_PASSWORD }}
 
     - name: Publish build info
       env:
